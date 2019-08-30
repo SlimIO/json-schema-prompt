@@ -1,0 +1,58 @@
+{
+    "name": "@slimio/json-schema-prompt",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "prepublishOnly": "pkg-ok",
+        "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
+        "test": "cross-env psp && ava --verbose",
+        "coverage": "nyc npm test",
+        "report": "nyc report --reporter=html"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SlimIO/json-schema-prompt.git"
+    },
+    "keywords": [],
+    "author": "SlimIO",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/SlimIO/json-schema-prompt/issues"
+    },
+    "homepage": "https://github.com/SlimIO/json-schema-prompt#readme",
+    "dependencies": {},
+    "devDependencies": {
+        "@commitlint/cli": "^8.1.0",
+        "@commitlint/config-conventional": "^8.1.0",
+        "@escommunity/minami": "^1.0.0",
+        "@slimio/eslint-config": "^3.0.3",
+        "eslint": "^6.2.2",
+        "husky": "^3.0.4",
+        "jsdoc": "^3.6.3",
+        "pkg-ok": "^2.3.1",
+        "cross-env": "^5.2.0",
+        "@slimio/psp": "^0.7.0",
+        "ava": "^2.3.0",
+        "nyc": "^14.1.1",
+        "dotenv": "^8.1.0"
+    },
+    "engines": {
+        "node": ">=10"
+    },
+    "husky": {
+        "hooks": {
+            "pre-push": "npm test",
+            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+        }
+    },
+    "nyc": {
+        "check-coverage": true,
+        "per-file": false,
+        "lines": 98,
+        "statements": 98,
+        "functions": 98,
+        "branches": 90
+    }
+}
