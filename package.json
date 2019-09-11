@@ -1,8 +1,8 @@
 {
     "name": "@slimio/json-schema-prompt",
     "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
+    "description": "Tool to verify and create some json schema",
+    "main": "src/index.js",
     "scripts": {
         "start": "node index.js",
         "prepublishOnly": "pkg-ok",
@@ -15,14 +15,22 @@
         "type": "git",
         "url": "git+https://github.com/SlimIO/json-schema-prompt.git"
     },
-    "keywords": [],
+    "keywords": [
+        "jsp",
+        "tool",
+        "slimio",
+        "json-schema-prompt",
+        "json"
+    ],
     "author": "SlimIO",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/SlimIO/json-schema-prompt/issues"
     },
     "homepage": "https://github.com/SlimIO/json-schema-prompt#readme",
-    "dependencies": {},
+    "dependencies": {
+        "qoa": "^0.2.0"
+    },
     "devDependencies": {
         "@commitlint/cli": "^8.1.0",
         "@commitlint/config-conventional": "^8.1.0",
@@ -43,7 +51,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-push": "npm test",
+            "pre-push": "cross-env eslint src/*.js bin/index.js && npm test",
             "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
         }
     },
