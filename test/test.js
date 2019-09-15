@@ -6,6 +6,8 @@ const { validate } = require("./../src");
 const fail = { additionalProperties: false };
 
 avaTest("Verify error when you send bad json object", (test) => {
+
+
     /*
     test.throws(() => {
         validate(fail);

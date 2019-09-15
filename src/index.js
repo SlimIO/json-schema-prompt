@@ -1,52 +1,64 @@
 "use strict";
 
-const { token } = require("./keywords");
 const qoa = require("qoa");
+const lodash = require('lodash')
+
+const { yellow } = require('kleur')
 
 /**
- *
+ * @method recurse
  * @param {*} schema
- * @param {*} parent
+ * @param {*} path
  */
-function* recurse(schema, parent = "") {
+function* recurse(schema, path = "") {
     if (!Reflect.has(schema, "properties")) {
         return;
     }
 
     for (const [key, value] of Object.entries(schema.properties)) {
-        if (value.type === token.OBJECT) {
-            value.name = key;
-            yield* recurse(value, value);
+
+        if (value.type === "object") {
+
+            let newPath = path
+            if (key !== undefined) {
+                newPath = `${newPath === "" ? "" : `${newPath}.`}${key}`
+            }
+
+            yield* recurse(value, newPath);
         }
         else {
-            yield [key, value, parent];
+            yield [key, value, path, value.default];
         }
+
     }
 }
 
 /**
- *
  * @param {*} schema
  */
 async function validate(schema) {
     const object = {};
 
-    for (const [key,, parent] of recurse(schema)) {
+    for (const [key, values, path] of recurse(schema)) {
+        const { default: defaultValue = 'undefined' } = values
+
         const result = await qoa.input({
             type: "input",
-            query: `Select a value for ${key}`,
+            query: `Select a value for ${yellow().bold(key)} - Default value to ${yellow().bold(defaultValue)}:`,
             handle: key
         });
 
-        if (parent) {
-            object[parent.name] = { [key]: result[key] };
+        const value = result[key] === "" ? defaultValue : result[key];
+        if (path === '') {
+            Object.assign(object, { [key]: value });
         }
         else {
-            Object.assign(object, { [key]: result[key] });
+            lodash.set(object, `${path}.${[key]}`, value);
         }
+
     }
 
-    console.log(object);
+    return object;
 }
 
 

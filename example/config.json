@@ -9,10 +9,6 @@
         "bar": {
             "type": "object",
             "properties": {
-                "b": {
-                    "type": "string",
-                    "description": "b"
-                },
                 "a": {
                     "type": "object",
                     "description": "a",
@@ -26,6 +22,10 @@
                             "description": "ab"
                         }
                     }
+                },
+                "b": {
+                    "type": "string",
+                    "description": "b"
                 }
             }
         }
