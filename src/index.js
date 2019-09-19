@@ -6,17 +6,16 @@ const set = require("lodash.set");
 const { yellow } = require("kleur");
 
 /**
- * @function recurse
- * @param {*} schema
- * @param {*} path
+ * @generator
+ * @function walkJSONSchema
+ * @param {!object} schema JSON Schema Object
+ * @param {string} [path]
  */
-function* recurse(schema, path = "") {
-    if (!Reflect.has(schema, "properties")) {
-        return;
-    }
+function* walkJSONSchema(schema, path) {
+    const properties = schema.properties || {};
 
-    for (const [key, value] of Object.entries(schema.properties)) {
-        const currPath = path === "" ? key : `${path}.${key}`;
+    for (const [key, value] of Object.entries(properties)) {
+        const currPath = typeof path === "undefined" ? key : `${path}.${key}`;
 
         if (value.type === "object") {
             yield { type: "object", path: currPath };
@@ -29,14 +28,15 @@ function* recurse(schema, path = "") {
 }
 
 /**
- * @param {*} schema
- * @returns {*} new object whith schema structure
- * @example
- * const { readFile } = require("fs").promises;
- * const { join } = require("path");
- * const { validate } = require("./../src");
+ * @async
+ * @function fillWithSchema
+ * @param {!object} schema JSON Schema Object
+ * @returns {Promise<object>} new object whith schema structure
  *
- * const json = JSON.parse({
+ * @example
+ * const { fillWithSchema } = require("@slimio/json-schema-prompt");
+ *
+ * const schema = {
  *      additionalProperties: false,
  *      properties: {
  *          foo: {
@@ -45,23 +45,20 @@ function* recurse(schema, path = "") {
  *              default: "bar"
  *          }
  *      }
- *  });
+ *  };
  *
  * async function main() {
- *   const buf = await readFile(join(__dirname, "config.json"));
- *   const json = JSON.parse(buf.toString());
- *   const object = await validate(json);
- *
- *   console.log(JSON.stringify(object, null, 4));
+ *     const payload = await fillWithSchema(schema);
+ *     console.log(JSON.stringify(payload, null, 4));
  * }
  * main().catch(console.error);
  */
-async function validate(schema) {
-    const object = {};
+async function fillWithSchema(schema) {
+    const object = Object.create(null);
 
-    for (const { type, key, value, path } of recurse(schema)) {
+    for (const { type, key, value, path } of walkJSONSchema(schema)) {
         if (type === "object") {
-            set(object, path, {});
+            set(object, path, Object.create(null));
             continue;
         }
         const { default: defaultValue = "undefined" } = value;
@@ -78,4 +75,4 @@ async function validate(schema) {
 }
 
 
-module.exports = { validate };
+module.exports = { fillWithSchema };
