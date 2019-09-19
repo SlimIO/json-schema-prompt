@@ -1,8 +1,8 @@
 "use strict";
 
+// Require Third-party Dependencies
 const qoa = require("qoa");
-const lodash = require("lodash");
-
+const set = require("lodash.set");
 const { yellow } = require("kleur");
 
 /**
@@ -16,16 +16,14 @@ function* recurse(schema, path = "") {
     }
 
     for (const [key, value] of Object.entries(schema.properties)) {
-        if (value.type === "object") {
-            let newPath = path;
-            if (key !== undefined) {
-                newPath = `${newPath === "" ? "" : `${newPath}.`}${key}`;
-            }
+        const currPath = path === "" ? key : `${path}.${key}`;
 
-            yield* recurse(value, newPath);
+        if (value.type === "object") {
+            yield { type: "object", path: currPath };
+            yield* recurse(value, currPath);
         }
         else {
-            yield [key, value, path, value.default];
+            yield { type: "key", path: currPath, key, value };
         }
     }
 }
@@ -49,33 +47,31 @@ function* recurse(schema, path = "") {
  *      }
  *  });
  *
- * readFile(join(__dirname, "config.json"))
- *      .then((data) => JSON.parse(data))
- *      .then((object) => {
- *          const object = validate(object);
+ * async function main() {
+ *   const buf = await readFile(join(__dirname, "config.json"));
+ *   const json = JSON.parse(buf.toString());
+ *   const object = await validate(json);
  *
- *          console.log(object);
- *      }).catch(console.error);
+ *   console.log(JSON.stringify(object, null, 4));
+ * }
+ * main().catch(console.error);
  */
 async function validate(schema) {
     const object = {};
 
-    for (const [key, values, path] of recurse(schema)) {
-        const { default: defaultValue = "undefined" } = values;
+    for (const { type, key, value, path } of recurse(schema)) {
+        if (type === "object") {
+            set(object, path, {});
+            continue;
+        }
+        const { default: defaultValue = "undefined" } = value;
 
         const result = await qoa.input({
-            type: "input",
             query: `Select a value for ${yellow().bold(key)} - Default value to ${yellow().bold(defaultValue)}:`,
             handle: key
         });
 
-        const value = result[key] === "" ? defaultValue : result[key];
-        if (path === "") {
-            Object.assign(object, { [key]: value });
-        }
-        else {
-            lodash.set(object, `${path}.${[key]}`, value);
-        }
+        set(object, path, result[key] === "" ? defaultValue : result[key]);
     }
 
     return object;
