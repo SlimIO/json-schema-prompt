@@ -3,8 +3,11 @@
 const { readFile } = require("fs").promises;
 const { join } = require("path");
 
-const { fillWithSchema } = require("./../src");
+const { fillWithSchema } = require("../");
 
+/**
+ * @function main
+ */
 async function main() {
     const buf = await readFile(join(__dirname, "config.json"));
     const json = JSON.parse(buf.toString());

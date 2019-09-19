@@ -2,9 +2,8 @@
     "name": "@slimio/json-schema-prompt",
     "version": "1.0.0",
     "description": "Tool to verify and create some json schema",
-    "main": "src/index.js",
+    "main": "./index.js",
     "scripts": {
-        "start": "node index.js",
         "prepublishOnly": "pkg-ok",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
         "test": "cross-env psp && ava --verbose",
