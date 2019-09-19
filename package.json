@@ -52,7 +52,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-push": "cross-env eslint src/*.js src/index.js && npm test",
+            "pre-push": "cross-env eslint index.js && npm test",
             "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
         }
     },
