@@ -6,6 +6,37 @@ const set = require("lodash.set");
 const { yellow } = require("kleur");
 
 /**
+ * @function validateCast
+ * @param {*} payload
+ * @param {!string} type
+ * @param {boolean} [hasDefaultValue=false]
+ * @returns {boolean}
+ */
+function validateCast(payload = "", type, hasDefaultValue = false) {
+    if (payload === "" && hasDefaultValue) {
+        return true;
+    }
+
+    let uValue = payload;
+    switch (type) {
+        case "number":
+            uValue = Number(uValue);
+            if (Number.isNaN(uValue)) {
+                return false;
+            }
+            break;
+        case "boolean":
+            uValue = Boolean(uValue);
+            break;
+        case "null":
+            return payload === "";
+    }
+
+    // eslint-disable-next-line
+    return typeof uValue === type;
+}
+
+/**
  * @generator
  * @function walkJSONSchema
  * @param {!object} schema JSON Schema Object
@@ -61,14 +92,23 @@ async function fillWithSchema(schema) {
             set(object, path, Object.create(null));
             continue;
         }
-        const { default: defaultValue = "undefined" } = value;
+        const { default: dV = null } = value;
+        const hasDefault = dV !== null;
 
-        const result = await qoa.input({
-            query: `Select a value for ${yellow().bold(key)} - Default value to ${yellow().bold(defaultValue)}:`,
-            handle: key
-        });
+        const query = `Select a value for ${yellow().bold(path)} ${dV === null ? "" : `(Default: ${yellow().bold(dV)})`}`;
+        while (true) {
+            const result = await qoa.input({ query, handle: key });
+            const payload = result[key];
 
-        set(object, path, result[key] === "" ? defaultValue : result[key]);
+            const isCastOk = Array.isArray(value.type) ?
+                value.type.some((currType) => validateCast(payload, currType, hasDefault)) :
+                validateCast(payload, value.type, hasDefault);
+
+            if (isCastOk) {
+                set(object, path, payload === "" ? dV : payload);
+                break;
+            }
+        }
     }
 
     return object;

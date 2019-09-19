@@ -2,32 +2,9 @@
     "additionalProperties": false,
     "properties": {
         "foo": {
-            "type": "string",
+            "type": "number",
             "description": "MER IL EST FOO !!!",
-            "default": "boo"
-        },
-        "bar": {
-            "type": "object",
-            "properties": {
-                "a": {
-                    "type": "object",
-                    "description": "a",
-                    "properties": {
-                        "aa": {
-                            "type": "string",
-                            "description": "aa"
-                        },
-                        "ab": {
-                            "type": "string",
-                            "description": "ab"
-                        }
-                    }
-                },
-                "b": {
-                    "type": "string",
-                    "description": "b"
-                }
-            }
+            "default": 10
         }
     }
 }
