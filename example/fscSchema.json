@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "additionalProperties": false,
+    "type": "object",
+    "required": ["profiles"],
+    "properties": {
+        "profiles": {
+            "additionalProperties": false,
+            "type": "object",
+            "patternProperties": {
+                "[a-zA-Z0-9_-]": {
+                    "type": "object",
+                    "required": [
+                        "target",
+                        "interval",
+                        "active",
+                        "rules"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                        "target": {
+                            "type": "string"
+                        },
+                        "interval": {
+                            "type": ["number", "string"],
+                            "description": "The time delay to execute the given profile",
+                            "default": 1000
+                        },
+                        "active": {
+                            "type": "boolean",
+                            "description": "Enable/Disable a profile",
+                            "default": true
+                        },
+                        "metrics": {
+                            "type": "number"
+                        },
+                        "integrity": {
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "enum": [
+                                            "age_limiter",
+                                            "space_limiter",
+                                            "files_number",
+                                            "repository_number",
+                                            "size_limiter",
+                                            "read_time"
+                                        ]
+                                    },
+                                    "value": {
+                                        "type": "number"
+                                    }
+                                },
+                                "required": [
+                                    "name", "value"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

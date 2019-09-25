@@ -5,6 +5,11 @@
             "type": "number",
             "description": "MER IL EST FOO !!!",
             "default": 10
+        },
+        "bar": {
+            "type": "number",
+            "description": "MER IL EST FOO !!!",
+            "default": 100
         }
     }
 }
