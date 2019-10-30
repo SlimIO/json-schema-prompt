@@ -1,5 +1,6 @@
 {
     "additionalProperties": false,
+    "type": "object",
     "properties": {
         "foo": {
             "type": "number",
@@ -10,6 +11,38 @@
             "type": "number",
             "description": "MER IL EST FOO !!!",
             "default": 100
+        },
+        "fizz": {
+            "type": "object",
+            "properties": {
+                "buzz": { 
+                    "type": "string"
+                }
+            }
+        },
+        "rules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "value"],
+                "additionalProperties": false,
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "enum": [
+                            "age_limiter",
+                            "space_limiter",
+                            "files_number",
+                            "repository_number",
+                            "size_limiter",
+                            "read_time"
+                        ]
+                    },
+                    "value": {
+                        "type": "number"
+                    }
+                }
+            }
         }
     }
 }

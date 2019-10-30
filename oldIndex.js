@@ -97,6 +97,9 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
                 yield { type: "object", path: currPath };
                 yield* walkJSONSchema(value, currPath);
                 break;
+            case "array":
+                yield { type: "array", path: currPath, value: value.items };
+                break;
             default:
                 yield { type: "key", path: currPath, key, value };
         }
@@ -114,7 +117,7 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
  * @returns {number|string|boolean}
  */
 async function query(type, options = Object.create(null)) {
-    const { key, value, path, regex } = options;
+    const { key, value, path, enums = [], regex } = options;
     switch (type) {
         case "object": {
             const { default: dV = null } = value;
@@ -131,7 +134,12 @@ async function query(type, options = Object.create(null)) {
                     return result[key];
                 }
 
-                result = await qoa.input({ query, handle: key });
+                if (enums.length > 0) {
+                    result = await qoa.input({ query, handle: key });
+                }
+                else {
+                    result = await qoa.interactive({ query, handle: key, menu: enums });
+                }
 
                 const payload = result[key];
 
@@ -159,7 +167,13 @@ async function query(type, options = Object.create(null)) {
                 }
             }
         }
-        default: new Error(`No case found for type ${type}`);
+        case "array": {
+            const query = `Do you want to add an item to ${yellow().bold(path)}:`;
+            result = await qoa.interactive({ type: "interactive", query, handle: key, menu: [true, false] });
+
+            return result[key];
+        }
+        default: return new Error(`No case found for type ${type}`);
     }
 }
 
@@ -193,10 +207,26 @@ async function fillWithSchema(schema) {
     const object = Object.create(null);
     const gen = walkJSONSchema(schema);
     console.log(JSON.stringify([...gen], null, 4));
-    for (const { type, key, value, path, regex } of walkJSONSchema(schema)) {
+    for (const { type, key, value, path, enums, regex } of walkJSONSchema(schema)) {
         console.log(`TYPE: ${type}, KEY: ${key}, PATH: ${path}`);
         if (type === "object") {
             set(object, path, Object.create(null));
+            continue;
+        }
+
+        if (type === "array") {
+            const array = [];
+            while (true) {
+                const result = await query("array", { key, regex: reg, path });
+                if (result === "false") {
+                    break;
+                }
+                const obj = await fillWithSchema(value);
+                // console.log(obj);
+                // console.log(JSON.stringify(obj, null, 4));
+                array.push(obj);
+            }
+            set(object, path, array);
             continue;
         }
 
@@ -221,7 +251,7 @@ async function fillWithSchema(schema) {
             continue;
             /* eslint-enable max-depth */
         }
-        const result = await query("object", { key, value, path });
+        const result = await query("object", { key, value, path, enums });
         // console.log(`result: ${result}`);
         set(object, path, result);
 
