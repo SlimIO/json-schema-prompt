@@ -39,6 +39,7 @@
                         },
                         "rules": {
                             "type": "array",
+                            "additionalProperties": false,
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -59,8 +60,7 @@
                                 },
                                 "required": [
                                     "name", "value"
-                                ],
-                                "additionalProperties": false
+                                ]
                             }
                         }
                     }
