@@ -6,7 +6,7 @@
 Fill a JavaScript plainObject by asking one or many question(s) by fetching recursively possible keys and values in a [JSON Schema](https://json-schema.org/).
 
 ## Requirements
-- [Node.js](https://nodejs.org/en/) v10 or higher
+- [Node.js](https://nodejs.org/en/) v12 or higher
 
 ## Getting Started
 
