@@ -31,7 +31,7 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
         type,
         // key,
         path,
-        // required: required.includes(key),
+        required,
         additionalProperties,
         description,
         enumValue,
@@ -46,6 +46,7 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
                 yield* walkJSONSchema(value, currPath);
                 break;
             case "array":
+                value.required = required.includes(key);
                 yield* walkJSONSchema(value, currPath);
                 break;
             default:
@@ -117,14 +118,14 @@ async function query(type, options = Object.create(null)) {
                 const regexStr = regex.length === 1 ? regex : [...regex];
                 query = `Create a new property for ${yellow().bold(path)} (regex: ${yellow().bold(regexStr)}) :`;
                 const { result } = await qoa.input({ query, handle: "result" });
-                console.log(result);
+                // console.log(result);
                 if (result === "") {
                     return { result };
                 }
                 for (const reg of regex) {
-                    console.log(new RegExp(reg).test(result));
+                    // console.log(new RegExp(reg).test(result));
                     if (new RegExp(reg).test(result)) {
-                        console.log(result);
+                        // console.log(result);
                         // console.log("REGEX IS CORRECT !");
 
                         return { result, regex: reg };
@@ -134,15 +135,18 @@ async function query(type, options = Object.create(null)) {
             }
             case "array": {
                 query = `Do you want to add an item to ${yellow().bold(path)}:`;
-                const result = await qoa.interactive({ type: "interactive", query, handle: key, menu: [true, false] });
+                const result = await qoa.interactive({ type: "interactive", query, handle: key, menu: ["yes", "no"] });
 
-                return result[key];
+                return result[key] === "yes";
             }
             case "boolean": {
-                const menu = hasDefault ? [defaultValue, !defaultValue] : [true, false];
+                let menu = hasDefault ? [defaultValue, !defaultValue] : [true, false];
+                if (required === false) {
+                    menu = hasDefault ? [defaultValue, !defaultValue, "none"] : ["none", true, false];
+                }
                 const result = await qoa.interactive({ type: "interactive", query, handle: key, menu });
 
-                return result[key];
+                return result[key] === "none" ? "" : result[key];
             }
             case "number": {
                 const result = await qoa.input({ query, handle: key });
@@ -155,8 +159,6 @@ async function query(type, options = Object.create(null)) {
                 break;
             }
         }
-
-        // try to cast in real number ? maybe fail !
 
         if (payload === "" && hasDefault) {
             payload = defaultValue;
@@ -179,7 +181,7 @@ async function query(type, options = Object.create(null)) {
  * @returns {Promise<object>} new object whith schema structure
  */
 async function fillWithSchema(schema, path) {
-    let startJSON;
+    let startJSON = {};
     // console.log("----------");
     for (const walk of walkJSONSchema(schema, path)) {
         const {
@@ -192,7 +194,7 @@ async function fillWithSchema(schema, path) {
             enumValue,
             items
         } = walk;
-        console.log(walk);
+        // console.log(walk);
         // console.log(`TYPE: ${type}, KEY: ${key}, PATH: ${path}`);
         switch (type) {
             case "object": {
@@ -212,45 +214,48 @@ async function fillWithSchema(schema, path) {
                 const array = [];
                 while (true) {
                     const result = await query(type, { key, path });
-                    console.log("item result:");
-                    console.log(result);
                     if (result === false) {
-                        console.log("BREAK !");
                         break;
                     }
+
                     const item = await fillWithSchema(items);
                     array.push(item);
                 }
+
+                if (required === false && array.length === 0) {
+                    break;
+                }
                 set(startJSON, path, array);
-                // console.log("startJSON");
-                // console.log(startJSON);
+
                 break;
             }
             case "patternProperties": {
                 while (true) {
                     const { result, regex } = await query(type, { key, path, regex: Object.keys(value), required });
                     if (result === "") {
-                        console.log("BREAK !");
                         break;
                     }
-                    const obj = await fillWithSchema(value[regex]);
-                    // console.log(obj);
-                    set(startJSON, [path, result].join("."), obj);
+
+                    const obj = await fillWithSchema(value[regex], result);
+                    set(startJSON, [path, result].join("."), obj[result]);
                 }
-                // console.log("startJSON");
-                // console.log(startJSON);
                 break;
             }
             default: {
-                console.log(`DEFAUL: ${type}`);
+                // console.log(`DEFAUL: ${type}`);
                 const result = await query(type, { defaultValue, path, key, required });
                 if (key === undefined) {
-                    return result;
+                    return type === "number" ? Number(result) : result;
                 }
-                set(startJSON, path, result);
-                // console.log("startJSON");
-                // console.log(startJSON);
+
+                // must check result === "" (0 can be set from user, empty string means skip)
+                if (required === false && result === "") {
+                    break;
+                }
+                set(startJSON, path, type === "number" ? Number(result) : result);
             }
+            // console.log("startJSON");
+            // console.log(startJSON);
         }
     }
 
