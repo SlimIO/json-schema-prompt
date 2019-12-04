@@ -15,9 +15,8 @@ const ROOT_OBJECT_NAME = "root object";
  * @function walkJSONSchema
  * @param {!object} schema JSON Schema Object
  * @param {string} [path] path
- * @param {object} options options
  */
-function* walkJSONSchema(schema, path, options = Object.create(null)) {
+function* walkJSONSchema(schema, path) {
     const {
         type,
         required = [],
@@ -87,12 +86,9 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
  * @function validateCast
  * @param {!string} type
  * @param {!*} payload
- * @param {object} [options]
- * @param {boolean} [options.hasDefaultValue=false]
- * @param {boolean} [options.regex]
  * @returns {boolean}
  */
-function validateCast(type, payload, options = Object.create(null)) {
+function validateCast(type, payload) {
     switch (type) {
         case "number":
             return !Number.isNaN(Number(payload));
@@ -108,11 +104,15 @@ function validateCast(type, payload, options = Object.create(null)) {
  * @param {object} options options
  * @param {string} [options.key] key
  * @param {number|string|boolean} [options.value] value
+ * @param {string} [options.key] key
  * @param {string} [options.path] path
+ * @param {string} [options.defaultValue] defaultValue
  * @param {string} [options.regex] regex
+ * @param {string} [options.required] required
  * @returns {number|string|boolean}
  */
 async function query(type, options = Object.create(null)) {
+    // real utility of key ?
     const { key, defaultValue, path, regex, required } = options;
     const hasDefault = defaultValue !== undefined;
     const defaultStr = hasDefault ? ` (Default: ${yellow().bold(defaultValue)})` : "";
