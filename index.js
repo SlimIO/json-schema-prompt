@@ -7,6 +7,9 @@ const get = require("lodash.get");
 const yn = require("yn");
 const { yellow } = require("kleur");
 
+// CONSTANT
+const ROOT_OBJECT_NAME = "root object";
+
 /**
  * @generator
  * @function walkJSONSchema
@@ -20,7 +23,7 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
         required = [],
         properties = {},
         patternProperties,
-        additionalProperties = true,
+        additionalProperties = false,
         description,
         default: defaultValue,
         enum: enumValue = [],
@@ -29,10 +32,8 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
 
     yield {
         type,
-        // key,
         path,
         required,
-        additionalProperties,
         description,
         enumValue,
         items
@@ -55,7 +56,6 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
                     key,
                     path: currPath,
                     required: required.includes(key),
-                    additionalProperties,
                     description: value.description,
                     defaultValue: value.default,
                     enumValue: value.enum
@@ -71,6 +71,13 @@ function* walkJSONSchema(schema, path, options = Object.create(null)) {
             value: patternProperties,
             path,
             additionalProperties
+        };
+    }
+
+    if (additionalProperties === true) {
+        yield {
+            type: "additionalProperties",
+            path
         };
     }
 }
@@ -114,24 +121,37 @@ async function query(type, options = Object.create(null)) {
         let payload;
         switch (type) {
             case "patternProperties": {
-                console.log("patternProperties !");
                 const regexStr = regex.length === 1 ? regex : [...regex];
                 query = `Create a new property for ${yellow().bold(path)} (regex: ${yellow().bold(regexStr)}) :`;
                 const { result } = await qoa.input({ query, handle: "result" });
-                // console.log(result);
                 if (result === "") {
                     return { result };
                 }
-                for (const reg of regex) {
-                    // console.log(new RegExp(reg).test(result));
-                    if (new RegExp(reg).test(result)) {
-                        // console.log(result);
-                        // console.log("REGEX IS CORRECT !");
 
+                // improve with array filter ? and give a selection of matched regex (qoa interactive) ?
+                for (const reg of regex) {
+                    if (new RegExp(reg).test(result)) {
                         return { result, regex: reg };
                     }
                 }
                 continue;
+            }
+            case "additionalProperties": {
+                query = `Do you want to add a property in ${yellow().bold(path)}:`;
+                const result = await qoa.interactive({ type: "interactive", query, handle: key, menu: ["yes", "no"] });
+
+                return result[key] === "yes";
+            }
+            case "key": {
+                query = `Create a new name propertie for ${yellow().bold(path)}:`;
+                const resultKey = await qoa.input({ type: "interactive", query, handle: key });
+
+                const realPath = path === ROOT_OBJECT_NAME ? path : `${path}.${resultKey}`;
+                const menu = ["string", "number", "boolean"];
+                query = `Select a type to ${yellow().bold(realPath)}:`;
+                const resultType = await qoa.interactive({ type: "interactive", query, handle: key, menu });
+
+                return { key: resultKey[key], type: resultType[key] };
             }
             case "array": {
                 query = `Do you want to add an item to ${yellow().bold(path)}:`;
@@ -182,20 +202,17 @@ async function query(type, options = Object.create(null)) {
  */
 async function fillWithSchema(schema, path) {
     let startJSON = {};
-    // console.log("----------");
     for (const walk of walkJSONSchema(schema, path)) {
         const {
             type,
             value, key, path,
             required,
-            additionalProperties,
             description,
             defaultValue,
             enumValue,
             items
         } = walk;
         // console.log(walk);
-        // console.log(`TYPE: ${type}, KEY: ${key}, PATH: ${path}`);
         switch (type) {
             case "object": {
                 if (typeof path === "undefined") {
@@ -203,11 +220,9 @@ async function fillWithSchema(schema, path) {
                 }
                 else {
                     set(startJSON, path, {});
-                    console.log("startJSON");
-                    console.log(startJSON);
+                    // console.log("startJSON");
+                    // console.log(startJSON);
                 }
-                // const object = Object.create(null);
-                // const item = await fillWithSchema(value);
                 break;
             }
             case "array": {
@@ -241,6 +256,23 @@ async function fillWithSchema(schema, path) {
                 }
                 break;
             }
+            case "additionalProperties": {
+                while (true) {
+                    const realPath = path === undefined ? ROOT_OBJECT_NAME : path;
+                    let result = await query(type, { path: realPath });
+                    if (result === false) {
+                        break;
+                    }
+
+                    const { key, type: keyType } = await query("key", { path: realPath });
+
+                    const newPath = path === undefined ? key : [path, key].join(".");
+                    result = await query(keyType, { path: newPath, required: true });
+
+                    set(startJSON, newPath, result);
+                }
+                break;
+            }
             default: {
                 // console.log(`DEFAUL: ${type}`);
                 const result = await query(type, { defaultValue, path, key, required });
@@ -254,9 +286,9 @@ async function fillWithSchema(schema, path) {
                 }
                 set(startJSON, path, type === "number" ? Number(result) : result);
             }
-            // console.log("startJSON");
-            // console.log(startJSON);
         }
+        // console.log("startJSON");
+        // console.log(startJSON);
     }
 
     return startJSON;

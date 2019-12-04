@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/schema#",
-    "additionalProperties": false,
+    "additionalProperties": true,
     "type": "object",
     "required": ["profiles"],
     "properties": {
         "profiles": {
-            "additionalProperties": false,
+            "additionalProperties": true,
             "type": "object",
             "patternProperties": {
                 "[a-zA-Z0-9_-]": {
