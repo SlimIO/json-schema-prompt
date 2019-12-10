@@ -43,6 +43,7 @@ function* walkJSONSchema(schema, path) {
 
         switch (value.type) {
             case "object":
+                value.required = required.includes(key);
                 yield* walkJSONSchema(value, currPath);
                 break;
             case "array":
@@ -212,17 +213,21 @@ async function fillWithSchema(schema, path) {
             enumValue,
             items
         } = walk;
-        // console.log(walk);
+        console.log(walk);
         switch (type) {
             case "object": {
                 if (typeof path === "undefined") {
                     startJSON = Object.create(null);
+                    break;
+                }
+                if (required === true) {
+                    set(startJSON, path, {});
                 }
                 else {
-                    set(startJSON, path, {});
-                    // console.log("startJSON");
-                    // console.log(startJSON);
+                    // ask question to create obj ?
                 }
+                // console.log("startJSON");
+                // console.log(startJSON);
                 break;
             }
             case "array": {
