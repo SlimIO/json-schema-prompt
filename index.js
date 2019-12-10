@@ -114,10 +114,20 @@ function validateCast(type, payload) {
  */
 async function query(type, options = Object.create(null)) {
     // real utility of key ?
-    const { key, defaultValue, path, regex, required } = options;
+    const {
+        key,
+        defaultValue,
+        path,
+        description,
+        regex,
+        required
+    } = options;
     const hasDefault = defaultValue !== undefined;
     const defaultStr = hasDefault ? ` (Default: ${yellow().bold(defaultValue)})` : "";
     while (true) {
+        if (description !== undefined) {
+            console.log(`Desc: ${description}`);
+        }
         let query = `Select a value for ${yellow().bold(path)}${defaultStr}:`;
         let payload;
         switch (type) {
@@ -213,7 +223,7 @@ async function fillWithSchema(schema, path) {
             enumValue,
             items
         } = walk;
-        console.log(walk);
+        // console.log(walk);
         switch (type) {
             case "object": {
                 if (typeof path === "undefined") {
@@ -233,7 +243,7 @@ async function fillWithSchema(schema, path) {
             case "array": {
                 const array = [];
                 while (true) {
-                    const result = await query(type, { key, path });
+                    const result = await query(type, { key, path, description });
                     if (result === false) {
                         break;
                     }
@@ -251,7 +261,13 @@ async function fillWithSchema(schema, path) {
             }
             case "patternProperties": {
                 while (true) {
-                    const { result, regex } = await query(type, { key, path, regex: Object.keys(value), required });
+                    const { result, regex } = await query(type, {
+                        key,
+                        path,
+                        description,
+                        regex: Object.keys(value),
+                        required
+                    });
                     if (result === "") {
                         break;
                     }
@@ -280,7 +296,13 @@ async function fillWithSchema(schema, path) {
             }
             default: {
                 // console.log(`DEFAUL: ${type}`);
-                const result = await query(type, { defaultValue, path, key, required });
+                const result = await query(type, {
+                    defaultValue,
+                    path,
+                    description,
+                    key,
+                    required
+                });
                 if (key === undefined) {
                     return type === "number" ? Number(result) : result;
                 }
