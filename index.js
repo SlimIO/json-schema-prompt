@@ -25,7 +25,7 @@ function* walkJSONSchema(schema, path) {
         additionalProperties = false,
         description,
         default: defaultValue,
-        enum: enumValue = [],
+        enum: enumValue,
         items
     } = schema;
 
@@ -120,7 +120,8 @@ async function query(type, options = Object.create(null)) {
         path,
         description,
         regex,
-        required
+        required,
+        enumValue
     } = options;
     const hasDefault = defaultValue !== undefined;
     const defaultStr = hasDefault ? ` (Default: ${yellow().bold(defaultValue)})` : "";
@@ -180,12 +181,24 @@ async function query(type, options = Object.create(null)) {
                 return result[key] === "none" ? "" : result[key];
             }
             case "number": {
-                const result = await qoa.input({ query, handle: key });
+                let result;
+                if (enumValue === undefined) {
+                    result = await qoa.input({ query, handle: key });
+                }
+                else {
+                    result = await qoa.interactive({ query, handle: key, menu: enumValue });
+                }
                 payload = result[key];
                 break;
             }
             default: {
-                const result = await qoa.input({ query, handle: key });
+                let result;
+                if (enumValue === undefined) {
+                    result = await qoa.input({ query, handle: key });
+                }
+                else {
+                    result = await qoa.interactive({ query, handle: key, menu: enumValue });
+                }
                 payload = result[key];
                 break;
             }
@@ -223,7 +236,7 @@ async function fillWithSchema(schema, path) {
             enumValue,
             items
         } = walk;
-        // console.log(walk);
+        console.log(walk);
         switch (type) {
             case "object": {
                 if (typeof path === "undefined") {
@@ -301,7 +314,8 @@ async function fillWithSchema(schema, path) {
                     path,
                     description,
                     key,
-                    required
+                    required,
+                    enumValue
                 });
                 if (key === undefined) {
                     return type === "number" ? Number(result) : result;
