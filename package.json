@@ -1,6 +1,6 @@
 {
     "name": "@slimio/json-schema-prompt",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Tool to verify and create some json schema",
     "main": "./index.js",
     "scripts": {
