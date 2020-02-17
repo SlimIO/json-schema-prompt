@@ -3,8 +3,6 @@
 // Require Third-party Dependencies
 const qoa = require("qoa");
 const set = require("lodash.set");
-const get = require("lodash.get");
-const yn = require("yn");
 const { yellow } = require("kleur");
 
 // CONSTANT
