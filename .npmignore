@@ -17,3 +17,4 @@ CONTRIBUTING.md
 CHANGELOG.md
 .eslintignore
 .snyk
+example/
