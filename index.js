@@ -29,8 +29,13 @@ function* walkJSONSchema(schema, path) {
         items
     } = schema;
 
+    let newType = type;
+    if (type === undefined && Object.entries(properties).length > 0) {
+        newType = "object";
+    }
+
     yield {
-        type,
+        type: newType,
         path,
         required,
         description,
@@ -236,7 +241,7 @@ async function fillWithSchema(schema, path) {
             enumValue,
             items
         } = walk;
-        console.log(walk);
+        // console.log(walk);
         switch (type) {
             case "object": {
                 if (typeof path === "undefined") {
