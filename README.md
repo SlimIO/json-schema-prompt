@@ -1,10 +1,12 @@
 # Json-schema-prompt
-![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/SlimIO/is/commit-activity) [![Greenkeeper badge](https://badges.greenkeeper.io/SlimIO/json-schema-prompt.svg)](https://greenkeeper.io/)
+![version](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/SlimIO/json-schema-prompt/master/package.json&query=$.version&label=Version)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/SlimIO/json-schema-prompt/commit-activity)
 ![MIT](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![dep](https://img.shields.io/david/SlimIO/json-schema-prompt)
-![size](https://img.shields.io/github/languages/code-size/SlimIO/json-schema-prompt)
+![size](https://img.shields.io/bundlephobia/min/@slimio/json-schema-prompt)
 ![Known Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/npm/@slimio/json-schema-prompt)
+[![Build Status](https://travis-ci.com/SlimIO/json-schema-prompt.svg?branch=master)](https://travis-ci.com/SlimIO/json-schema-prompt)
+[![Greenkeeper badge](https://badges.greenkeeper.io/SlimIO/json-schema-prompt.svg)](https://greenkeeper.io/)
 
 Fill a JavaScript plainObject by asking one or many question(s) by fetching recursively possible keys and values in a [JSON Schema](https://json-schema.org/).
 
@@ -20,7 +22,6 @@ $ npm i @slimio/json-schema-prompt
 # or
 $ yarn add @slimio/json-schema-prompt
 ```
-
 
 ## Usage example
 ```js
