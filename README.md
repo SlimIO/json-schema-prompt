@@ -1,6 +1,6 @@
 # Json-schema-prompt
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/SlimIO/is/commit-activity)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/SlimIO/is/commit-activity) [![Greenkeeper badge](https://badges.greenkeeper.io/SlimIO/json-schema-prompt.svg)](https://greenkeeper.io/)
 ![MIT](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![dep](https://img.shields.io/david/SlimIO/json-schema-prompt)
 ![size](https://img.shields.io/github/languages/code-size/SlimIO/json-schema-prompt)
