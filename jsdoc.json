@@ -7,7 +7,7 @@
     },
     "source": {
         "include": [
-            "./src/index.js",
+            "./src/utils.js",
             "./index.js"
         ],
         "exclude": [

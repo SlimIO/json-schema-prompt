@@ -1,64 +1,48 @@
 "use strict";
 
 // Require Third-party Dependencies
-const qoa = require("qoa");
 const set = require("lodash.set");
-const { yellow } = require("kleur");
+
+// Require Internal Dependencies
+const { query } = require("./src/utils");
 
 // CONSTANT
-const ROOT_OBJECT_NAME = "root object";
+const kRootObjectName = "root object";
 
 /**
  * @generator
  * @function walkJSONSchema
+ * @description a function created to walk a JSON Schema!
  * @param {!object} schema JSON Schema Object
  * @param {string} [path] path
  */
 function* walkJSONSchema(schema, path) {
     const {
-        type,
-        required = [],
-        properties = {},
-        patternProperties,
-        additionalProperties = false,
-        description,
-        default: defaultValue,
-        enum: enumValue,
-        items
+        type, required = [], properties = {}, patternProperties, additionalProperties = false, description, enum: enumValue, items
     } = schema;
 
-    let newType = type;
-    if (type === undefined && Object.entries(properties).length > 0) {
-        newType = "object";
-    }
-
+    // Yield the root object (if not type detected then return "object")
+    const defaultRootType = typeof type === "undefined" && Object.entries(properties).length > 0 ? "object" : type;
     yield {
-        type: newType,
-        path,
-        required,
-        description,
-        enumValue,
-        items
+        type: defaultRootType, path, required, description, enumValue, items
     };
 
+    const requiredSet = new Set(Array.isArray(required) ? required : []);
     for (const [key, value] of Object.entries(properties)) {
         const currPath = typeof path === "undefined" ? key : `${path}.${key}`;
+        const isRequired = requiredSet.has(key);
 
         switch (value.type) {
-            case "object":
-                value.required = required.includes(key);
-                yield* walkJSONSchema(value, currPath);
-                break;
+            // in the case where we meet an array or an object then we continue the search in depth
             case "array":
-                value.required = required.includes(key);
+            case "object":
+                value.required = isRequired;
                 yield* walkJSONSchema(value, currPath);
                 break;
+            // else we return the encountered item
             default:
                 yield {
-                    type: value.type,
-                    key,
-                    path: currPath,
-                    required: required.includes(key),
+                    type: value.type, key, path: currPath, required: isRequired,
                     description: value.description,
                     defaultValue: value.default,
                     enumValue: value.enum
@@ -67,156 +51,12 @@ function* walkJSONSchema(schema, path) {
         }
     }
 
-
-    if (patternProperties !== undefined) {
-        yield {
-            type: "patternProperties",
-            value: patternProperties,
-            path,
-            additionalProperties
-        };
+    if (typeof patternProperties !== "undefined") {
+        yield { type: "patternProperties", value: patternProperties, path, additionalProperties };
     }
 
-    if (additionalProperties === true) {
-        yield {
-            type: "additionalProperties",
-            path
-        };
-    }
-}
-
-
-/**
- * @function validateCast
- * @param {!string} type
- * @param {!*} payload
- * @returns {boolean}
- */
-function validateCast(type, payload) {
-    switch (type) {
-        case "number":
-            return !Number.isNaN(Number(payload));
-        default:
-            // eslint-disable-next-line
-            return typeof payload === type;
-    }
-}
-
-/**
- * @function query
- * @param {string} type type
- * @param {object} options options
- * @param {string} [options.key] key
- * @param {number|string|boolean} [options.value] value
- * @param {string} [options.key] key
- * @param {string} [options.path] path
- * @param {string} [options.defaultValue] defaultValue
- * @param {string} [options.regex] regex
- * @param {string} [options.required] required
- * @returns {number|string|boolean}
- */
-async function query(type, options = Object.create(null)) {
-    // real utility of key ?
-    const {
-        key,
-        defaultValue,
-        path,
-        description,
-        regex,
-        required,
-        enumValue
-    } = options;
-    const hasDefault = defaultValue !== undefined;
-    const defaultStr = hasDefault ? ` (Default: ${yellow().bold(defaultValue)})` : "";
-    while (true) {
-        if (description !== undefined) {
-            console.log(`Desc: ${description}`);
-        }
-        let query = `Select a value for ${yellow().bold(path)}${defaultStr}:`;
-        let payload;
-        switch (type) {
-            case "patternProperties": {
-                const regexStr = regex.length === 1 ? regex : [...regex];
-                query = `Create a new property for ${yellow().bold(path)} (regex: ${yellow().bold(regexStr)}) :`;
-                const { result } = await qoa.input({ query, handle: "result" });
-                if (result === "") {
-                    return { result };
-                }
-
-                // improve with array filter ? and give a selection of matched regex (qoa interactive) ?
-                for (const reg of regex) {
-                    if (new RegExp(reg).test(result)) {
-                        return { result, regex: reg };
-                    }
-                }
-                continue;
-            }
-            case "additionalProperties": {
-                query = `Do you want to add a property in ${yellow().bold(path)}:`;
-                const result = await qoa.interactive({ type: "interactive", query, handle: key, menu: ["yes", "no"] });
-
-                return result[key] === "yes";
-            }
-            case "key": {
-                query = `Create a new name propertie for ${yellow().bold(path)}:`;
-                const resultKey = await qoa.input({ type: "interactive", query, handle: key });
-
-                const realPath = path === ROOT_OBJECT_NAME ? path : `${path}.${resultKey}`;
-                const menu = ["string", "number", "boolean"];
-                query = `Select a type to ${yellow().bold(realPath)}:`;
-                const resultType = await qoa.interactive({ type: "interactive", query, handle: key, menu });
-
-                return { key: resultKey[key], type: resultType[key] };
-            }
-            case "array": {
-                query = `Do you want to add an item to ${yellow().bold(path)}:`;
-                const result = await qoa.interactive({ type: "interactive", query, handle: key, menu: ["yes", "no"] });
-
-                return result[key] === "yes";
-            }
-            case "boolean": {
-                let menu = hasDefault ? [defaultValue, !defaultValue] : [true, false];
-                if (required === false) {
-                    menu = hasDefault ? [defaultValue, !defaultValue, "none"] : ["none", true, false];
-                }
-                const result = await qoa.interactive({ type: "interactive", query, handle: key, menu });
-
-                return result[key] === "none" ? "" : result[key];
-            }
-            case "number": {
-                let result;
-                if (enumValue === undefined) {
-                    result = await qoa.input({ query, handle: key });
-                }
-                else {
-                    result = await qoa.interactive({ query, handle: key, menu: enumValue });
-                }
-                payload = result[key];
-                break;
-            }
-            default: {
-                let result;
-                if (enumValue === undefined) {
-                    result = await qoa.input({ query, handle: key });
-                }
-                else {
-                    result = await qoa.interactive({ query, handle: key, menu: enumValue });
-                }
-                payload = result[key];
-                break;
-            }
-        }
-
-        if (payload === "" && hasDefault) {
-            payload = defaultValue;
-        }
-        const isCastOk = Array.isArray(type) ?
-            type.some((currType) => validateCast(currType, payload)) :
-            validateCast(type, payload);
-
-        if (isCastOk === true) {
-            return payload;
-        }
+    if (additionalProperties) {
+        yield { type: "additionalProperties", path };
     }
 }
 
@@ -228,32 +68,17 @@ async function query(type, options = Object.create(null)) {
  * @returns {Promise<object>} new object whith schema structure
  */
 async function fillWithSchema(schema, path) {
-    let startJSON = {};
+    const filledJSON = Object.create(null);
+
     for (const walk of walkJSONSchema(schema, path)) {
-        const {
-            type,
-            value, key, path,
-            required,
-            description,
-            defaultValue,
-            enumValue,
-            items
-        } = walk;
-        // console.log(walk);
+        const { type, value, key, path, required, description, defaultValue, enumValue, items } = walk;
+
         switch (type) {
             case "object": {
-                if (typeof path === "undefined") {
-                    startJSON = Object.create(null);
-                    break;
+                // empty required object!
+                if (typeof path !== "undefined" && required) {
+                    set(filledJSON, path, Object.create(null));
                 }
-                if (required === true) {
-                    set(startJSON, path, {});
-                }
-                else {
-                    // ask question to create obj ?
-                }
-                // console.log("startJSON");
-                // console.log(startJSON);
                 break;
             }
             case "array": {
@@ -268,34 +93,30 @@ async function fillWithSchema(schema, path) {
                     array.push(item);
                 }
 
-                if (required === false && array.length === 0) {
+                if (!required && array.length === 0) {
                     break;
                 }
-                set(startJSON, path, array);
+                set(filledJSON, path, array);
 
                 break;
             }
             case "patternProperties": {
                 while (true) {
                     const { result, regex } = await query(type, {
-                        key,
-                        path,
-                        description,
-                        regex: Object.keys(value),
-                        required
+                        key, path, description, regex: Object.keys(value), required
                     });
                     if (result === "") {
                         break;
                     }
 
                     const obj = await fillWithSchema(value[regex], result);
-                    set(startJSON, [path, result].join("."), obj[result]);
+                    set(filledJSON, [path, result].join("."), obj[result]);
                 }
                 break;
             }
             case "additionalProperties": {
                 while (true) {
-                    const realPath = path === undefined ? ROOT_OBJECT_NAME : path;
+                    const realPath = path === undefined ? kRootObjectName : path;
                     let result = await query(type, { path: realPath });
                     if (result === false) {
                         break;
@@ -306,36 +127,28 @@ async function fillWithSchema(schema, path) {
                     const newPath = path === undefined ? key : [path, key].join(".");
                     result = await query(keyType, { path: newPath, required: true });
 
-                    set(startJSON, newPath, result);
+                    set(filledJSON, newPath, result);
                 }
                 break;
             }
             default: {
-                // console.log(`DEFAUL: ${type}`);
                 const result = await query(type, {
-                    defaultValue,
-                    path,
-                    description,
-                    key,
-                    required,
-                    enumValue
+                    defaultValue, path, description, key, required, enumValue
                 });
                 if (key === undefined) {
                     return type === "number" ? Number(result) : result;
                 }
 
                 // must check result === "" (0 can be set from user, empty string means skip)
-                if (required === false && result === "") {
+                if (!required && result === "") {
                     break;
                 }
-                set(startJSON, path, type === "number" ? Number(result) : result);
+                set(filledJSON, path, type === "number" ? Number(result) : result);
             }
         }
-        // console.log("startJSON");
-        // console.log(startJSON);
     }
 
-    return startJSON;
+    return filledJSON;
 }
 
 
