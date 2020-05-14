@@ -6,7 +6,6 @@
 ![size](https://img.shields.io/bundlephobia/min/@slimio/json-schema-prompt)
 ![Known Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/npm/@slimio/json-schema-prompt)
 [![Build Status](https://travis-ci.com/SlimIO/json-schema-prompt.svg?branch=master)](https://travis-ci.com/SlimIO/json-schema-prompt)
-[![Greenkeeper badge](https://badges.greenkeeper.io/SlimIO/json-schema-prompt.svg)](https://greenkeeper.io/)
 
 Fill a JavaScript plainObject by asking one or many question(s) by fetching recursively possible keys and values in a [JSON Schema](https://json-schema.org/).
 
