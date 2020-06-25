@@ -31,7 +31,7 @@
     },
     "homepage": "https://github.com/SlimIO/json-schema-prompt#readme",
     "dependencies": {
-        "kleur": "^3.0.3",
+        "kleur": "^4.0.2",
         "lodash.set": "^4.3.2",
         "qoa": "^0.2.0"
     },
